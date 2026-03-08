@@ -7,3 +7,7 @@ class Entry(models.Model):
 
     def __str__(self):
         return self.title
+
+def get_status():
+    """Return simple status dict."""
+    return {"ok": True, "service": "StudentManagement System"}
