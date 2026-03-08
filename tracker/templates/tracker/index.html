@@ -1,4 +1,9 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StudentManagement System</title><style>body{background:#0c1118;color:#e2f1ed;font-family:system-ui;padding:3rem 1rem}main{max-width:750px;margin:auto}form{display:flex;gap:.5rem;margin:1rem 0}input,select,button{padding:.75rem;border-radius:.5rem;border:1px solid #344540;background:#17241f;color:white}button{background:#10b981;color:#06160f;cursor:pointer}li{display:flex;justify-content:space-between;border-bottom:1px solid #344540}ul{padding:0;list-style:none}</style></head><body><main><h1>StudentManagement System</h1><p>Your djangos, in focus.</p>
 <form action="{% url 'create' %}" method="post">{% csrf_token %}<input name="title" required maxlength="120" placeholder="New entry"><select name="category">{% for category in categories %}<option>{{ category }}</option>{% endfor %}</select><button>Add</button></form>
 <form method="get"><input name="q" value="{{ query }}" placeholder="Search records"><button>Search</button></form>
-<ul>{% for entry in entries %}<li><p>{{ entry.title }} <small>{{ entry.category }}</small></p><form action="{% url 'delete' entry.pk %}" method="post">{% csrf_token %}<button>Delete</button></form></li>{% empty %}<li>No entries yet.</li>{% endfor %}</ul></main></body></html>
+<ul>{% for entry in entries %}<li><p>{{ entry.title }} <small>{{ entry.category }}</small></p><form action="{% url 'delete' entry.pk %}" method="post">{% csrf_token %}<button>Delete</button></form></li>{% empty %}<li>No entries yet.</li>{% endfor %}</ul></main>
+  <section class="card">
+    <h3>New section</h3>
+    <p>Added in recent update</p>
+  </section>
+</body></html>
