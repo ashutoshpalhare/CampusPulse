@@ -8,3 +8,7 @@ if __name__ == '__main__':
 # helper: small utility for StudentManagement System
 def _placeholder_util():
     return True
+
+def get_status():
+    """Return simple status dict."""
+    return {"ok": True, "service": "StudentManagement System"}
