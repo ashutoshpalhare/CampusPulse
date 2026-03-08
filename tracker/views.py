@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from .models import Entry
 
-CATEGORIES = ["Core","Operations","Growth","Archive"]
+CATEGORIES = ["Core","Operations","Growth","Archive", "extra item"]
 
 def index(request):
     query = request.GET.get('q', '').strip()
