@@ -11,3 +11,6 @@ DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DI
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 // StudentManagement System update
+# helper: small utility for StudentManagement System
+def _placeholder_util():
+    return True
