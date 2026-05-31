@@ -1,0 +1,25 @@
+{% extends "tracker/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sign in{% endblock %}
+
+{% block guest_content %}
+<div class="flex min-h-full items-center justify-center px-4 py-12">
+  <div class="w-full max-w-md">
+    <div class="mb-8 text-center">
+      <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347M12 3.493a59.902 59.902 0 0110.399 5.84L12 13.489 1.601 9.333A59.905 59.905 0 0112 3.493z"/></svg>
+      </span>
+      <h1 class="mt-4 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Sign in to CampusPulse</h1>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+      <form method="post" class="cp-form space-y-5">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50">Sign in</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
