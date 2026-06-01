@@ -1,0 +1,175 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dashboard{% endblock %} · CampusPulse</title>
+
+  <!-- Apply saved theme BEFORE paint to avoid a light-mode flash -->
+  <script src="{% static 'js/theme-init.js' %}"></script>
+
+  <!-- Compiled Tailwind CSS (built by `npm run build:css`; includes self-hosted Inter font) -->
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+
+  <!-- Local vendor scripts. Order matters: toast.js must be registered before Alpine boots. -->
+  <script defer src="{% static 'js/vendor/htmx.min.js' %}"></script>
+  <script defer src="{% static 'js/vendor/chart.umd.js' %}"></script>
+  <script defer src="{% static 'js/toast.js' %}"></script>
+  <script defer src="{% static 'js/vendor/alpine.min.js' %}"></script>
+  {% block extra_head %}{% endblock %}
+</head>
+
+<!--
+  Alpine state for the whole page:
+    sidebarOpen -> mobile off-canvas sidebar
+    dark        -> theme flag; toggleTheme() flips the <html> class, saves it, and
+                   dispatches 'theme-changed' so Chart.js can re-colour itself.
+  hx-headers adds the CSRF token to EVERY HTMX request automatically.
+-->
+<body
+  class="h-full bg-slate-50 font-sans text-slate-700 antialiased dark:bg-slate-950 dark:text-slate-300"
+  hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+  x-data="{
+    sidebarOpen: false,
+    dark: document.documentElement.classList.contains('dark'),
+    toggleTheme() {
+      this.dark = !this.dark;
+      document.documentElement.classList.toggle('dark', this.dark);
+      try { localStorage.setItem('cp-theme', this.dark ? 'dark' : 'light'); } catch (e) {}
+      window.dispatchEvent(new CustomEvent('theme-changed'));
+    }
+  }"
+  @keydown.escape.window="sidebarOpen = false"
+>
+{% if user.is_authenticated %}
+  {% with url_name=request.resolver_match.url_name %}
+
+  <!-- Mobile overlay -->
+  <div x-show="sidebarOpen" x-cloak x-transition.opacity
+       class="fixed inset-0 z-30 bg-slate-900/60 lg:hidden" @click="sidebarOpen = false" aria-hidden="true"></div>
+
+  <!-- Sidebar: off-canvas on mobile, fixed on lg+ (lg:translate-x-0 overrides the Alpine class) -->
+  <aside
+    class="fixed inset-y-0 left-0 z-40 flex w-64 transform flex-col border-r border-slate-200 bg-white transition-transform duration-200 ease-out lg:translate-x-0 dark:border-slate-800 dark:bg-slate-900"
+    :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+    aria-label="Sidebar"
+  >
+    <div class="flex h-16 items-center gap-2.5 border-b border-slate-200 px-5 dark:border-slate-800">
+      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"/></svg>
+      </span>
+      <span class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">CampusPulse</span>
+    </div>
+
+    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <a href="{% url 'tracker:dashboard' %}"
+         class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {% if url_name == 'dashboard' %}bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800{% endif %}"
+         {% if url_name == 'dashboard' %}aria-current="page"{% endif %}>
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+        Dashboard
+      </a>
+      <a href="{% url 'tracker:assignment_list' %}"
+         class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {% if url_name == 'assignment_list' %}bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800{% endif %}"
+         {% if url_name == 'assignment_list' %}aria-current="page"{% endif %}>
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+        Assignments
+      </a>
+      {% if user.is_staff %}
+      <a href="{% url 'tracker:student_register' %}"
+         class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {% if url_name == 'student_register' %}bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800{% endif %}"
+         {% if url_name == 'student_register' %}aria-current="page"{% endif %}>
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z"/></svg>
+        Register Student
+      </a>
+      {% endif %}
+    </nav>
+
+    <div class="border-t border-slate-200 p-4 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-500">
+      Signed in as <span class="font-medium text-slate-700 dark:text-slate-300">{{ user.get_username }}</span>
+      · {% if user.is_staff %}Staff{% else %}Student{% endif %}
+    </div>
+  </aside>
+
+  <div class="lg:pl-64">
+    <!-- Top navbar -->
+    <header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur sm:px-6 dark:border-slate-800 dark:bg-slate-900/80">
+      <button type="button" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden dark:text-slate-400 dark:hover:bg-slate-800"
+              @click="sidebarOpen = true" aria-label="Open sidebar">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+      </button>
+
+      <h1 class="text-base font-semibold text-slate-900 sm:text-lg dark:text-white">{% block page_title %}{% endblock %}</h1>
+
+      <div class="ml-auto flex items-center gap-2">
+        <!-- Dark / light toggle -->
+        <button type="button" @click="toggleTheme()"
+                class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                :aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'">
+          <svg x-show="!dark" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
+          <svg x-show="dark" x-cloak class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
+        </button>
+
+        <!-- User dropdown (Alpine: open state, click-outside, Esc to close) -->
+        <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
+          <button type="button" @click="open = !open" :aria-expanded="open"
+                  class="flex items-center gap-2 rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold uppercase text-white">{{ user.get_username|slice:":1" }}</span>
+            <span class="hidden text-sm font-medium text-slate-700 sm:block dark:text-slate-200">{{ user.get_username }}</span>
+          </button>
+          <div x-show="open" x-cloak x-transition.origin.top.right
+               class="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+            {% if user.is_staff %}
+            <a href="{% url 'admin:index' %}" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700">Admin panel</a>
+            {% endif %}
+            <!-- Django 5 requires POST for logout -->
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="block w-full px-4 py-2 text-left text-sm text-rose-600 hover:bg-slate-50 dark:text-rose-400 dark:hover:bg-slate-700">Log out</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="p-4 sm:p-6 lg:p-8">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% endwith %}
+{% else %}
+  {% block guest_content %}{% endblock %}
+{% endif %}
+
+  <!-- Hidden bridge: server-rendered Django messages -> Alpine toasts -->
+  <div id="django-messages" hidden>
+    {% for message in messages %}<span data-level="{{ message.level_tag }}">{{ message }}</span>{% endfor %}
+  </div>
+
+  <!--
+    Toast container. Three sources feed add():
+      1. Django messages (read from #django-messages in init())
+      2. HTMX responses carrying an HX-Trigger: {"show-toast": {...}} header
+         (HTMX dispatches it as a DOM event; detail = the JSON object)
+      3. HTMX network/server errors (htmx:response-error / htmx:send-error)
+  -->
+  <div class="pointer-events-none fixed inset-x-0 top-4 z-50 flex flex-col items-end gap-3 px-4 sm:px-6"
+       aria-live="polite"
+       x-data="toastHub()"
+       @show-toast.window="add($event.detail.message, $event.detail.level)"
+       @htmx:response-error.window="add('Server error (' + $event.detail.xhr.status + '). Please try again.', 'error')"
+       @htmx:send-error.window="add('Network error. Check your connection.', 'error')">
+    <template x-for="t in toasts" :key="t.id">
+      <div x-transition.opacity.duration.200ms
+           class="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border p-4 text-sm shadow-lg"
+           :class="styles[t.level]" role="status">
+        <p class="flex-1 font-medium" x-text="t.message"></p>
+        <button type="button" @click="remove(t.id)" class="opacity-60 hover:opacity-100" aria-label="Dismiss">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </template>
+  </div>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
