@@ -1,0 +1,79 @@
+{% extends "tracker/base.html" %}
+
+{% block title %}Assignments{% endblock %}
+{% block page_title %}Assignments{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-7xl space-y-6">
+
+  {% if user.is_staff %}
+  <!-- Staff-only: collapsible "new assignment" panel (Alpine handles open/close) -->
+  <section x-data="{ open: false }" class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <button type="button" @click="open = !open" :aria-expanded="open"
+            class="flex w-full items-center justify-between px-5 py-4 text-left">
+      <span class="text-sm font-semibold text-slate-900 dark:text-white">+ New assignment</span>
+      <svg class="h-5 w-5 text-slate-400 transition-transform" :class="open && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+    </button>
+    <div x-show="open" x-cloak x-transition class="border-t border-slate-200 p-5 dark:border-slate-800">
+      {% include "tracker/partials/assignment_form.html" %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <!--
+      HTMX search/filter:
+        hx-get          -> GET this same URL with the form fields as query params
+        hx-trigger      -> 'input delay:300ms' debounces typing; 'change' fires for the <select>
+        hx-target       -> only the <tbody> is replaced with the returned <tr> rows
+        hx-push-url     -> keeps the address bar shareable (?q=...&status=...)
+        hx-indicator    -> shows the spinner while the request is in flight
+    -->
+    <form id="filter-form" method="get" action="{% url 'tracker:assignment_list' %}"
+          hx-get="{% url 'tracker:assignment_list' %}"
+          hx-trigger="input delay:300ms, change, submit"
+          hx-target="#assignment-rows" hx-swap="innerHTML" hx-push-url="true"
+          hx-indicator="#search-spinner"
+          class="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-center dark:border-slate-800">
+      <div class="relative flex-1">
+        <svg class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+        <label for="q" class="sr-only">Search assignments</label>
+        <input id="q" type="search" name="q" value="{{ q }}" placeholder="Search by title or course code…" autocomplete="off"
+               class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+        <svg id="search-spinner" class="htmx-indicator absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-indigo-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round" class="opacity-75"/></svg>
+      </div>
+      <label for="status" class="sr-only">Filter by status</label>
+      <select id="status" name="status"
+              class="rounded-lg border border-slate-300 bg-white py-2.5 pl-3 pr-9 text-sm text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+        <option value="" {% if not status %}selected{% endif %}>All statuses</option>
+        <option value="danger" {% if status == 'danger' %}selected{% endif %}>Overdue</option>
+        <option value="warning" {% if status == 'warning' %}selected{% endif %}>Due soon (&lt; 2 days)</option>
+        <option value="info" {% if status == 'info' %}selected{% endif %}>Upcoming (&lt; 7 days)</option>
+        <option value="success" {% if status == 'success' %}selected{% endif %}>On track</option>
+      </select>
+    </form>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
+        <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+          <tr>
+            <th scope="col" class="px-5 py-3">Assignment</th>
+            <th scope="col" class="px-5 py-3">Course</th>
+            <th scope="col" class="px-5 py-3">Due</th>
+            <th scope="col" class="px-5 py-3">Marks</th>
+            <th scope="col" class="px-5 py-3">Status</th>
+          </tr>
+        </thead>
+        <!-- Refreshes itself when the server fires the 'assignments-changed' event
+             (sent via HX-Trigger after a successful create). hx-include grabs current filters. -->
+        <tbody id="assignment-rows" class="divide-y divide-slate-100 dark:divide-slate-800"
+               hx-get="{% url 'tracker:assignment_list' %}"
+               hx-trigger="assignments-changed from:body"
+               hx-include="#filter-form" hx-swap="innerHTML">
+          {% include "tracker/partials/assignment_rows.html" %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}
