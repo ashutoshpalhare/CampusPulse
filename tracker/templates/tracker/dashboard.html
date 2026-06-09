@@ -1,0 +1,68 @@
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-7xl space-y-6">
+
+  <!-- Stat cards -->
+  <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Key statistics">
+    {% include "tracker/partials/stat_card.html" with label="Total Students" value=stats.total_students tone="indigo" icon="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" %}
+    {% include "tracker/partials/stat_card.html" with label="Pending Assignments" value=stats.pending_assignments tone="sky" icon="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" %}
+    {% include "tracker/partials/stat_card.html" with label="Due Within 48h" value=stats.due_soon tone="amber" icon="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" %}
+    {% include "tracker/partials/stat_card.html" with label="Notices (7 days)" value=stats.recent_notices tone="emerald" icon="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" %}
+  </section>
+
+  <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+    <!-- Chart: weekly submissions (dummy data) -->
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2 dark:border-slate-800 dark:bg-slate-900">
+      <div class="mb-4 flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-semibold text-slate-900 dark:text-white">Weekly submissions</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Assigned vs. submitted (sample data)</p>
+        </div>
+      </div>
+      <div class="relative h-72"><canvas id="submissionsChart" role="img" aria-label="Weekly assignments and submissions bar chart"></canvas></div>
+    </section>
+
+    <!-- Recent notices -->
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h2 class="mb-4 text-base font-semibold text-slate-900 dark:text-white">Recent notices</h2>
+      <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+        {% for notice in recent_notices %}
+        <li class="py-3 first:pt-0 last:pb-0">
+          <div class="flex items-center justify-between gap-2">
+            <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ notice.title }}</p>
+            <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium
+              {% if notice.priority == 'high' %}bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300
+              {% elif notice.priority == 'medium' %}bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300
+              {% else %}bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300{% endif %}">
+              {{ notice.get_priority_display }}
+            </span>
+          </div>
+          <p class="mt-1 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{{ notice.body }}</p>
+          <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ notice.posted_at|timesince }} ago</p>
+        </li>
+        {% empty %}
+        <li class="py-6 text-center text-sm text-slate-500">No notices yet.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <!-- Chart: students by department (dummy data) -->
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="mb-4 text-base font-semibold text-slate-900 dark:text-white">Students by department</h2>
+    <div class="relative h-64"><canvas id="deptChart" role="img" aria-label="Students by department doughnut chart"></canvas></div>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{# json_script safely embeds the Python dict as JSON - no inline {{ }} inside JS #}
+{{ chart_data|json_script:"chart-data" }}
+{# Chart.js is loaded with `defer` in base.html; this deferred script runs after it #}
+<script defer src="{% static 'js/dashboard-charts.js' %}"></script>
+{% endblock %}
