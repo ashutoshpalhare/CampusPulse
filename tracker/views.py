@@ -1,25 +1,46 @@
-from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
-from .models import Entry
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Student, Assignment, Notice
 
-CATEGORIES = ["Core","Operations","Growth","Archive"]
+def dashboard(request):
+    # Latest 5 notices aur assignments fetch karo
+    notices = Notice.objects.all()[:5]
+    assignments = Assignment.objects.all()[:5]
+    
+    context = {
+        'notices': notices,
+        'assignments': assignments,
+    }
+    return render(request, 'tracker/dashboard.html', context)
 
-def index(request):
-    query = request.GET.get('q', '').strip()
-    entries = Entry.objects.order_by('-created_at')
-    if query:
-        entries = entries.filter(title__icontains=query)
-    return render(request, 'tracker/index.html', {'entries': entries, 'categories': CATEGORIES, 'query': query})
+def assignment_list(request):
+    # Saare assignments, due date ke hisaab se sorted (models.py mein Meta ordering hai)
+    assignments = Assignment.objects.all()
+    return render(request, 'tracker/assignment_list.html', {'assignments': assignments})
 
-@require_POST
-def create_entry(request):
-    title = request.POST.get('title', '').strip()
-    category = request.POST.get('category', CATEGORIES[0])
-    if title and category in CATEGORIES:
-        Entry.objects.create(title=title[:120], category=category)
-    return redirect('index')
-
-@require_POST
-def delete_entry(request, pk):
-    get_object_or_404(Entry, pk=pk).delete()
-    return redirect('index')
+def student_register(request):
+    if request.method == 'POST':
+        roll_no = request.POST.get('roll_no', '').strip()
+        full_name = request.POST.get('full_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        department = request.POST.get('department', 'CSE')
+        semester = request.POST.get('semester', 1)
+        
+        # Basic validation
+        if roll_no and full_name:
+            try:
+                Student.objects.create(
+                    roll_no=roll_no,
+                    full_name=full_name,
+                    email=email,
+                    department=department,
+                    semester=int(semester)
+                )
+                messages.success(request, "✅ Student registered successfully!")
+                return redirect('student_register')
+            except Exception as e:
+                messages.error(request, f"❌ Error: Roll No might already exist. ({e})")
+        else:
+            messages.error(request, "❌ Roll No and Full Name are required.")
+            
+    return render(request, 'tracker/student_register.html')
